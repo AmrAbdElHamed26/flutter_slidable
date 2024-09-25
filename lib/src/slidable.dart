@@ -28,8 +28,11 @@ class Slidable extends StatefulWidget {
     this.direction = Axis.horizontal,
     this.dragStartBehavior = DragStartBehavior.down,
     this.useTextDirection = true,
+    this.slidableWidth,
     required this.child,
   });
+
+  final double? slidableWidth; // Add this property
 
   /// The Slidable widget controller.
   final SlidableController? controller;
@@ -261,6 +264,7 @@ class _SlidableState extends State<Slidable>
               clipper: _SlidableClipper(
                 axis: widget.direction,
                 controller: controller,
+                slidableWidth: widget.slidableWidth,
               ),
               child: actionPane,
             ),
@@ -318,16 +322,21 @@ class _SlidableClipper extends CustomClipper<Rect> {
   _SlidableClipper({
     required this.axis,
     required this.controller,
+    this.slidableWidth, // Pass slidableWidth
   }) : super(reclip: controller.animation);
 
   final Axis axis;
   final SlidableController controller;
+  final double? slidableWidth; // Store slidable width
 
   @override
   Rect getClip(Size size) {
+    // Calculate the maximum allowed width for the slidable part
+    final maxWidth = slidableWidth ?? size.width; // Use slidableWidth or default to full width
+
     switch (axis) {
       case Axis.horizontal:
-        final double offset = controller.ratio * size.width;
+        final double offset = controller.ratio * maxWidth;
         if (offset < 0) {
           return Rect.fromLTRB(size.width + offset, 0, size.width, size.height);
         }
@@ -347,10 +356,7 @@ class _SlidableClipper extends CustomClipper<Rect> {
   }
 
   @override
-  Rect getApproximateClipRect(Size size) => getClip(size);
-
-  @override
   bool shouldReclip(_SlidableClipper oldClipper) {
-    return oldClipper.axis != axis;
+    return oldClipper.axis != axis || oldClipper.slidableWidth != slidableWidth;
   }
 }
